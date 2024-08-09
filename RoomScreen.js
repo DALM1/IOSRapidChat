@@ -159,10 +159,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 90,
+    height: 90,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 2,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -172,10 +172,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   createRoomButton: {
+    backgroundColor: 'rgba(50, 110, 206, 1.8)',
+    padding: 7,
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
-    marginVertical: 10,
+    marginVertical: 30,
   },
   searchBar: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

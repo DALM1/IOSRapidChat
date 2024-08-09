@@ -5,6 +5,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { launchImageLibrary } from 'react-native-image-picker';
 import { uploadBytes, getDownloadURL, ref } from "firebase/storage";
 
+
 export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
