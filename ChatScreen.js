@@ -8,6 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 
 const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
 
+const defaultProfileImage = 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3I5ODY0aTZhanl6MWNzMXVxemhnbmVxZnhheXJ3OHJ5cTlsdjZwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xaZCqV4weJwHu/giphy.webp';
+
 export default function ChatScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -34,7 +36,7 @@ export default function ChatScreen() {
         createdAt: new Date(),
         user: auth.currentUser.email,
         displayName: auth.currentUser.displayName || auth.currentUser.email,
-        photoURL: auth.currentUser.photoURL || 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3I5ODY0aTZhanl6MWNzMXVxemhnbmVxZnhheXJ3OHJ5cTlsdjZwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xaZCqV4weJwHu/giphy.webp',
+        photoURL: auth.currentUser.photoURL || defaultProfileImage,
       });
       setMessage('');
       setMedia(null);
@@ -61,7 +63,7 @@ export default function ChatScreen() {
 
     return (
       <View style={styles.messageContainer}>
-        <Image source={{ uri: item.data.photoURL }} style={styles.profileImage} />
+        <Image source={{ uri: item.data.photoURL || defaultProfileImage }} style={styles.profileImage} />
         <View style={styles.messageContent}>
           <Text style={styles.displayName}>{item.data.displayName}</Text>
           <Text style={styles.messageText}>{item.data.text}</Text>
@@ -141,6 +143,7 @@ const styles = {
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 10,
     padding: 10,
+    alignItems: 'center',  // Center the content vertically
   },
   profileImage: {
     width: 40,

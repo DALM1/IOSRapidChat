@@ -15,7 +15,7 @@ export default function CreateThreadScreen({ navigation }) {
       user: auth.currentUser.email,
       displayName: auth.currentUser.displayName || auth.currentUser.email,
     });
-    navigation.navigate('Feed');  // Retourner au feed après la création du thread
+    navigation.navigate('Feed');
   };
 
   return (
