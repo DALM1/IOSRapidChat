@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Image, TouchableOpacity, Text, ImageBackground } from 'react-native';
+import { View, TextInput, Button, Image, TouchableOpacity, Text, ImageBackground, Alert } from 'react-native';
 import { auth, db, storage } from './firebase';
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -7,21 +7,24 @@ import { uploadBytes, getDownloadURL, ref } from "firebase/storage";
 
 const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen({ navigation, route }) {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [photoURL, setPhotoURL] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const roomName = route?.params?.roomName || null;
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const userRef = doc(db, 'users', auth.currentUser.uid);
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setDisplayName(userData.displayName || '');
-        setBio(userData.bio || '');
-        setPhotoURL(userData.photoURL || null);
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setDisplayName(userData.displayName || '');
+          setBio(userData.bio || '');
+          setPhotoURL(userData.photoURL || '');
+        }
       }
       setIsLoading(false);
     };
@@ -30,20 +33,27 @@ export default function ProfileScreen({ navigation }) {
   }, []);
 
   const updateProfile = async () => {
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-
-    // Préparer un objet de mise à jour
-    const updatedFields = {};
-    if (displayName) updatedFields.displayName = displayName;
-    if (bio) updatedFields.bio = bio;
-    if (photoURL) updatedFields.photoURL = photoURL;
-
-    // Si des champs ont été remplis, mise à jour Firestore
-    if (Object.keys(updatedFields).length > 0) {
-      await updateDoc(userRef, updatedFields);
+    if (auth.currentUser) {
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await updateDoc(userRef, {
+        displayName,
+        bio,
+        photoURL
+      });
     }
+    navigateToChat();
+  };
 
-    navigation.navigate('Chat');
+  const navigateToChat = () => {
+    if (roomName) {
+      navigation.navigate('Chat', { roomName });
+    } else {
+      Alert.alert('Error', 'No room selected. Please go back and select a room.');
+    }
+  };
+
+  const skipProfileSetup = () => {
+    navigateToChat();
   };
 
   const pickProfilePicture = () => {
@@ -105,6 +115,7 @@ export default function ProfileScreen({ navigation }) {
           }}
         />
         <Button title="Update Profile" onPress={updateProfile} />
+        <Button title="Skip" onPress={skipProfileSetup} color="gray" />
       </View>
     </ImageBackground>
   );

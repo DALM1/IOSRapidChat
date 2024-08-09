@@ -1,45 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, FlatList, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { View, TextInput, Button, FlatList, Text, TouchableOpacity, Image, ImageBackground, Alert } from 'react-native';
 import { db, auth } from './firebase';
-import { collection, addDoc, query, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, addDoc, query, onSnapshot, orderBy, where } from "firebase/firestore";
 import { launchImageLibrary } from 'react-native-image-picker';
 import Video from 'react-native-video';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
-
-const defaultProfileImage = 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3I5ODY0aTZhanl6MWNzMXVxemhnbmVxZnhheXJ3OHJ5cTlsdjZwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xaZCqV4weJwHu/giphy.webp';
 
 export default function ChatScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [media, setMedia] = useState(null);
   const navigation = useNavigation();
+  const route = useRoute();
+  const roomName = route.params?.roomName;
 
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    if (!roomName) {
+      Alert.alert("Error", "No room selected. Please go back and select a room.");
+      navigation.goBack();
+      return;
+    }
+
+    const q = query(
+      collection(db, "messages"),
+      where("roomName", "==", roomName),
+      orderBy("createdAt", "desc")
+    );
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({
         id: doc.id,
         data: doc.data()
       })));
+    }, (error) => {
+      console.error("Error fetching messages: ", error.message);
+      Alert.alert("Error", "There was a problem loading the messages. Please try again later.");
     });
 
     return unsubscribe;
-  }, []);
+  }, [roomName]);
 
   const sendMessage = async () => {
-    if (message.trim() || media) {
-      await addDoc(collection(db, "messages"), {
-        text: message,
-        media,
-        createdAt: new Date(),
-        user: auth.currentUser.email,
-        displayName: auth.currentUser.displayName || auth.currentUser.email,
-        photoURL: auth.currentUser.photoURL || defaultProfileImage,
-      });
-      setMessage('');
-      setMedia(null);
+    try {
+      if (message.trim() || media) {
+        await addDoc(collection(db, "messages"), {
+          text: message,
+          media,
+          createdAt: new Date(),
+          user: auth.currentUser.email,
+          displayName: auth.currentUser.displayName || auth.currentUser.email,
+          photoURL: auth.currentUser.photoURL || 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3I5ODY0aTZhanl6MWNzMXVxemhnbmVxZnhheXJ3OHJ5cTlsdjZwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xaZCqV4weJwHu/giphy.webp',
+          roomName: roomName
+        });
+        setMessage('');
+        setMedia(null);
+      }
+    } catch (error) {
+      console.error("Error sending message: ", error.message);
+      Alert.alert("Error", "There was a problem sending your message. Please try again.");
     }
   };
 
@@ -63,7 +83,7 @@ export default function ChatScreen() {
 
     return (
       <View style={styles.messageContainer}>
-        <Image source={{ uri: item.data.photoURL || defaultProfileImage }} style={styles.profileImage} />
+        <Image source={{ uri: item.data.photoURL }} style={styles.profileImage} />
         <View style={styles.messageContent}>
           <Text style={styles.displayName}>{item.data.displayName}</Text>
           <Text style={styles.messageText}>{item.data.text}</Text>
@@ -81,19 +101,6 @@ export default function ChatScreen() {
 
   return (
     <ImageBackground source={backgroundGif} style={{ flex: 1 }} resizeMode="cover">
-      {/* Navigation buttons */}
-      <View style={styles.navigationContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navigationText}>Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('CreateThread')}>
-          <Text style={styles.navigationText}>Create Thread</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Feed')}>
-          <Text style={styles.navigationText}>Feed</Text>
-        </TouchableOpacity>
-      </View>
-
       <FlatList
         data={messages}
         renderItem={renderMessage}
@@ -127,23 +134,12 @@ export default function ChatScreen() {
 }
 
 const styles = {
-  navigationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  navigationText: {
-    color: 'white',
-    fontSize: 16,
-  },
   messageContainer: {
     flexDirection: 'row',
     margin: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 10,
     padding: 10,
-    alignItems: 'center',  // Center the content vertically
   },
   profileImage: {
     width: 40,
@@ -195,6 +191,6 @@ const styles = {
     padding: 10,
   },
   pickMediaText: {
-    color: 'blue',
+    color: 'grey',
   },
 };
