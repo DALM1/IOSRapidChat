@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   createRoomButton: {
-    backgroundColor: 'rgba(50, 110, 206, 1.8)',
+    backgroundColor: 'rgba(50, 110, 206, 0.7)',
     padding: 7,
     color: 'white',
     fontSize: 18,
