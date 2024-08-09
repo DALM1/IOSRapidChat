@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, Alert, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, Alert, StyleSheet, Image, ImageBackground } from 'react-native';
 import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db, auth } from './firebase';
 import Dialog from 'react-native-dialog';
 import { useNavigation } from '@react-navigation/native';
 
 const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
+const logo = require('./assets/rapidchat-logo-based.png'); // Importation du logo
 
 export default function RoomScreen() {
   const [rooms, setRooms] = useState([]);
   const [roomName, setRoomName] = useState('');
   const [roomPassword, setRoomPassword] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // État pour la recherche
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [enteredPassword, setEnteredPassword] = useState("");
@@ -43,7 +44,7 @@ export default function RoomScreen() {
         });
         setRoomName('');
         setRoomPassword('');
-        fetchRooms();
+        fetchRooms(); // Actualiser la liste des rooms après la création
       } catch (error) {
         console.error("Error creating room: ", error);
       }
@@ -55,7 +56,7 @@ export default function RoomScreen() {
   const deleteRoom = async (roomId) => {
     try {
       await deleteDoc(doc(db, "rooms", roomId));
-      fetchRooms();
+      fetchRooms(); // Actualiser la liste après la suppression
     } catch (error) {
       console.error("Error deleting room: ", error);
       Alert.alert("Error", "Could not delete the room");
@@ -81,7 +82,7 @@ export default function RoomScreen() {
     }
   };
 
-
+  // Filtrage des rooms en fonction de la recherche
   const filteredRooms = rooms.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -89,6 +90,8 @@ export default function RoomScreen() {
   return (
     <ImageBackground source={backgroundGif} style={styles.background}>
       <View style={styles.container}>
+        <Image source={logo} style={styles.logo} />
+
         <TextInput
           placeholder="Room Name"
           value={roomName}
@@ -122,7 +125,7 @@ export default function RoomScreen() {
             <TouchableOpacity onPress={() => joinRoom(room)} style={styles.roomItem}>
               <Text style={styles.roomName}>{room.name}</Text>
             </TouchableOpacity>
-            {room.createdBy === auth.currentUser.uid && (
+            {room.createdBy === auth.currentUser.uid && ( // Afficher le bouton de suppression si l'utilisateur a créé la room
               <TouchableOpacity onPress={() => deleteRoom(room.id)} style={styles.deleteButton}>
                 <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
@@ -155,6 +158,12 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
+  logo: {
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     color: 'white',
@@ -164,11 +173,7 @@ const styles = StyleSheet.create({
   },
   createRoomButton: {
     color: 'white',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 5,
-    fontSize: 20,
-    padding: 10,
-    marginBottom: 10,
+    fontSize: 18,
     textAlign: 'center',
     marginVertical: 10,
   },
