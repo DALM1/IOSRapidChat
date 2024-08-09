@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, Image, TouchableOpacity, Text, ImageBackground } from 'react-native';
-import { auth, db, storage } from './firebase';
+import { db, auth } from './firebase';
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { launchImageLibrary } from 'react-native-image-picker';
 import { uploadBytes, getDownloadURL, ref } from "firebase/storage";
 
-const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
-
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [photoURL, setPhotoURL] = useState(null);
@@ -19,9 +17,9 @@ export default function ProfileScreen({ navigation }) {
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        setDisplayName(userData.displayName || '');
-        setBio(userData.bio || '');
-        setPhotoURL(userData.photoURL || null);
+        setDisplayName(userData.displayName);
+        setBio(userData.bio);
+        setPhotoURL(userData.photoURL);
       }
       setIsLoading(false);
     };
@@ -31,19 +29,11 @@ export default function ProfileScreen({ navigation }) {
 
   const updateProfile = async () => {
     const userRef = doc(db, 'users', auth.currentUser.uid);
-
-    // Préparer un objet de mise à jour
-    const updatedFields = {};
-    if (displayName) updatedFields.displayName = displayName;
-    if (bio) updatedFields.bio = bio;
-    if (photoURL) updatedFields.photoURL = photoURL;
-
-    // Si des champs ont été remplis, mise à jour Firestore
-    if (Object.keys(updatedFields).length > 0) {
-      await updateDoc(userRef, updatedFields);
-    }
-
-    navigation.navigate('Chat');
+    await updateDoc(userRef, {
+      displayName,
+      bio,
+      photoURL
+    });
   };
 
   const pickProfilePicture = () => {
@@ -61,11 +51,11 @@ export default function ProfileScreen({ navigation }) {
   };
 
   if (isLoading) {
-    return <Text>Loading...</Text>;
+    return <Text style={{ color: 'white', textAlign: 'center', marginTop: 50 }}>Loading...</Text>;
   }
 
   return (
-    <ImageBackground source={backgroundGif} style={{ flex: 1 }} resizeMode="cover">
+    <ImageBackground source={{ uri: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp' }} style={{ flex: 1 }} resizeMode="cover">
       <View style={{ alignItems: 'center', marginTop: 50 }}>
         <TouchableOpacity onPress={pickProfilePicture}>
           {photoURL ? (
@@ -104,7 +94,19 @@ export default function ProfileScreen({ navigation }) {
             width: '80%',
           }}
         />
-        <Button title="Update Profile" onPress={updateProfile} />
+        <TouchableOpacity
+          onPress={updateProfile}
+          style={{
+            backgroundColor: '#1E90FF',
+            padding: 10,
+            borderRadius: 10,
+            marginTop: 20,
+            width: '80%',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Update Profile</Text>
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );

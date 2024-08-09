@@ -4,6 +4,7 @@ import { db, auth } from './firebase';
 import { collection, addDoc, query, onSnapshot, orderBy } from "firebase/firestore";
 import { launchImageLibrary } from 'react-native-image-picker';
 import Video from 'react-native-video';
+import { useNavigation } from '@react-navigation/native';
 
 const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
 
@@ -11,6 +12,7 @@ export default function ChatScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [media, setMedia] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
@@ -30,7 +32,9 @@ export default function ChatScreen() {
         text: message,
         media,
         createdAt: new Date(),
-        user: auth.currentUser.email
+        user: auth.currentUser.email,
+        displayName: auth.currentUser.displayName || auth.currentUser.email,
+        photoURL: auth.currentUser.photoURL || 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3I5ODY0aTZhanl6MWNzMXVxemhnbmVxZnhheXJ3OHJ5cTlsdjZwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xaZCqV4weJwHu/giphy.webp',
       });
       setMessage('');
       setMedia(null);
@@ -50,40 +54,49 @@ export default function ChatScreen() {
     });
   };
 
+  const renderMessage = ({ item }) => {
+    const isImage = item.data.media && item.data.media.type.startsWith('image/');
+    const isVideo = item.data.media && item.data.media.type.startsWith('video/');
+    const formattedDate = new Date(item.data.createdAt.seconds * 1000).toLocaleString();
+
+    return (
+      <View style={styles.messageContainer}>
+        <Image source={{ uri: item.data.photoURL }} style={styles.profileImage} />
+        <View style={styles.messageContent}>
+          <Text style={styles.displayName}>{item.data.displayName}</Text>
+          <Text style={styles.messageText}>{item.data.text}</Text>
+          {isImage && (
+            <Image source={{ uri: item.data.media.uri }} style={styles.media} resizeMode="cover" />
+          )}
+          {isVideo && (
+            <Video source={{ uri: item.data.media.uri }} style={styles.media} resizeMode="cover" controls={true} />
+          )}
+          <Text style={styles.messageDate}>{formattedDate}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <ImageBackground source={backgroundGif} style={{ flex: 1 }} resizeMode="cover">
+      {/* Navigation buttons */}
+      <View style={styles.navigationContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.navigationText}>Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('CreateThread')}>
+          <Text style={styles.navigationText}>Create Thread</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Feed')}>
+          <Text style={styles.navigationText}>Feed</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={messages}
-        renderItem={({ item }) => (
-          <View style={{
-            marginVertical: 10,
-            marginHorizontal: 15,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            borderRadius: 20,
-            padding: 15
-          }}>
-            <Text style={{ color: 'white', marginBottom: 10 }}>
-              {item.data.user}: {item.data.text}
-            </Text>
-            {item.data.media && (
-              item.data.media.type.startsWith('image/') ? (
-                <Image
-                  source={{ uri: item.data.media.uri }}
-                  style={{ width: 220, height: 220, borderRadius: 15 }}
-                  resizeMode="cover"
-                />
-              ) : item.data.media.type.startsWith('video/') ? (
-                <Video
-                  source={{ uri: item.data.media.uri }}
-                  style={{ width: 220, height: 220, borderRadius: 15 }}
-                  resizeMode="cover"
-                  controls={true}
-                />
-              ) : null
-            )}
-          </View>
-        )}
+        renderItem={renderMessage}
         keyExtractor={item => item.id}
+        inverted
       />
 
       <TextInput
@@ -91,25 +104,18 @@ export default function ChatScreen() {
         placeholderTextColor="#ccc"
         value={message}
         onChangeText={setMessage}
-        style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-          color: 'white',
-          padding: 10,
-          borderRadius: 10,
-          marginHorizontal: 15,
-          marginBottom: 10,
-        }}
+        style={styles.input}
       />
 
       {media && (
-        <View style={{ marginHorizontal: 15, marginBottom: 10 }}>
-          <Text style={{ color: 'white' }}>{media.fileName}</Text>
+        <View style={styles.mediaInfoContainer}>
+          <Text style={styles.mediaInfoText}>{media.fileName}</Text>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 15 }}>
+      <View style={styles.actionsContainer}>
         <TouchableOpacity onPress={pickMedia}>
-          <Text style={{ color: 'blue' }}>Pick Media</Text>
+          <Text style={styles.pickMediaText}>Pick Media</Text>
         </TouchableOpacity>
 
         <Button title="Send" onPress={sendMessage} />
@@ -117,3 +123,75 @@ export default function ChatScreen() {
     </ImageBackground>
   );
 }
+
+const styles = {
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  navigationText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    margin: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  messageContent: {
+    flex: 1,
+  },
+  displayName: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  messageText: {
+    color: 'white',
+    marginBottom: 5,
+  },
+  media: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  messageDate: {
+    color: 'gray',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: 'white',
+    padding: 10,
+    borderRadius: 5,
+    marginHorizontal: 10,
+    marginBottom: 5,
+  },
+  mediaInfoContainer: {
+    marginHorizontal: 10,
+    marginBottom: 5,
+  },
+  mediaInfoText: {
+    color: 'white',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  pickMediaText: {
+    color: 'blue',
+  },
+};

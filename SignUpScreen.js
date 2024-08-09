@@ -1,100 +1,46 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
-import { auth } from './firebase';
+import { View, TextInput, Button, Text } from 'react-native';
+import { auth, db } from './firebase';
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignUp = () => {
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(userCredentials => {
-        console.log('User signed up: ', userCredentials.user.email);
-        navigation.navigate('Chat');
-      })
-      .catch(error => console.error(error.message));
+  const handleSignUp = async () => {
+    try {
+      const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredentials.user;
+
+      await setDoc(doc(db, 'users', user.uid), {
+        displayName: "",
+        bio: "",
+        photoURL: ""
+      });
+
+
+      navigation.navigate('Profile');
+    } catch (error) {
+      console.error('SignUp error: ', error.message);
+    }
   };
 
   return (
-    <ImageBackground
-      source={{ uri: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp' }}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>Sign Up</Text>
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor="lightgray"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="lightgray"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        />
-        <TouchableOpacity onPress={handleSignUp} style={styles.button}>
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
-        <Text style={styles.loginText}>
-          Already have an account?{' '}
-          <Text onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
-            Log in
-          </Text>
-        </Text>
-      </View>
-    </ImageBackground>
+    <View>
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <Button title="Sign Up" onPress={handleSignUp} />
+      <Text onPress={() => navigation.navigate('Login')}>Already have an account? Log in</Text>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  container: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Pour assombrir légèrement le fond et améliorer la lisibilité
-    padding: 20,
-    margin: 20,
-    borderRadius: 10,
-  },
-  title: {
-    fontSize: 24,
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    color: 'white',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  button: {
-    backgroundColor: 'blue',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  loginText: {
-    color: 'white',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  loginLink: {
-    color: 'lightblue',
-    fontWeight: 'bold',
-  },
-});

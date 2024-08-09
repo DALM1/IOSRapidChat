@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ImageBackground } from 'react-native';
+import { View, FlatList, Text, StyleSheet } from 'react-native';
 import { db } from './firebase';
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
-
-
 
 export default function FeedScreen() {
   const [threads, setThreads] = useState([]);
@@ -21,25 +19,46 @@ export default function FeedScreen() {
   }, []);
 
   return (
-    <ImageBackground source={{ uri: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp' }} style={{ flex: 1 }} resizeMode="cover">
+    <View style={styles.container}>
       <FlatList
         data={threads}
         renderItem={({ item }) => (
-          <View style={{
-            marginVertical: 10,
-            marginHorizontal: 15,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            borderRadius: 20,
-            padding: 15
-          }}>
-            <Text style={{ color: 'white' }}>{item.data.content}</Text>
-            <Text style={{ color: 'gray', marginTop: 10, fontSize: 12 }}>
-              {new Date(item.data.createdAt.toDate()).toLocaleString()}
-            </Text>
+          <View style={styles.threadContainer}>
+            <Text style={styles.threadTitle}>{item.data.title}</Text>
+            <Text style={styles.threadContent}>{item.data.content}</Text>
+            <Text style={styles.threadInfo}>{item.data.displayName || item.data.user} - {new Date(item.data.createdAt.seconds * 1000).toLocaleString()}</Text>
           </View>
         )}
         keyExtractor={item => item.id}
       />
-    </ImageBackground>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: 'black',
+  },
+  threadContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  threadTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  threadContent: {
+    color: 'white',
+    marginTop: 5,
+  },
+  threadInfo: {
+    color: 'gray',
+    marginTop: 10,
+    fontSize: 12,
+  },
+});
