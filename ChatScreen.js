@@ -143,7 +143,7 @@ const styles = {
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 10,
     padding: 10,
-    alignItems: 'center',  // Center the content vertically
+    alignItems: 'center',
   },
   profileImage: {
     width: 40,
