@@ -59,8 +59,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   container: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Pour assombrir légèrement le fond et améliorer la lisibilité
-    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     margin: 20,
     borderRadius: 10,
   },

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, FlatList, Text, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Button, FlatList, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { db, auth } from './firebase';
 import { collection, addDoc, query, onSnapshot, orderBy } from "firebase/firestore";
-import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import Video from 'react-native-video';
+
+const backgroundGif = { uri: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXZjZXo3Ym02bXloa25rMWQ2NWx6NHE5MDM5ZmNmNWJxeWN0ZHNiMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/w4E7xK8UM9ZeY1ksDa/giphy.webp" };
 
 export default function ChatScreen() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [media, setMedia] = useState(null); // State pour stocker l'image/vidéo sélectionnée
+  const [media, setMedia] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
@@ -25,12 +28,12 @@ export default function ChatScreen() {
     if (message.trim() || media) {
       await addDoc(collection(db, "messages"), {
         text: message,
-        media, // Ajoute le media (image/vidéo) au message
+        media,
         createdAt: new Date(),
         user: auth.currentUser.email
       });
       setMessage('');
-      setMedia(null); // Réinitialise le media après l'envoi
+      setMedia(null);
     }
   };
 
@@ -48,22 +51,35 @@ export default function ChatScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <ImageBackground source={backgroundGif} style={{ flex: 1 }} resizeMode="cover">
       <FlatList
         data={messages}
         renderItem={({ item }) => (
-          <View>
-            <Text style={{ color: 'white' }}>{item.data.user}: {item.data.text}</Text>
+          <View style={{
+            marginVertical: 10,
+            marginHorizontal: 15,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            borderRadius: 20,
+            padding: 15
+          }}>
+            <Text style={{ color: 'white', marginBottom: 10 }}>
+              {item.data.user}: {item.data.text}
+            </Text>
             {item.data.media && (
               item.data.media.type.startsWith('image/') ? (
                 <Image
                   source={{ uri: item.data.media.uri }}
-                  style={{ width: 200, height: 200 }}
+                  style={{ width: 220, height: 220, borderRadius: 15 }}
                   resizeMode="cover"
                 />
-              ) : (
-                <Text style={{ color: 'white' }}>Video sent</Text>
-              )
+              ) : item.data.media.type.startsWith('video/') ? (
+                <Video
+                  source={{ uri: item.data.media.uri }}
+                  style={{ width: 220, height: 220, borderRadius: 15 }}
+                  resizeMode="cover"
+                  controls={true}
+                />
+              ) : null
             )}
           </View>
         )}
@@ -72,30 +88,32 @@ export default function ChatScreen() {
 
       <TextInput
         placeholder="Type a message"
+        placeholderTextColor="#ccc"
         value={message}
         onChangeText={setMessage}
         style={{
-          backgroundColor: '#fff',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          color: 'white',
           padding: 10,
-          borderRadius: 5,
-          marginHorizontal: 10,
-          marginBottom: 5,
+          borderRadius: 10,
+          marginHorizontal: 15,
+          marginBottom: 10,
         }}
       />
 
       {media && (
-        <View style={{ marginHorizontal: 10, marginBottom: 5 }}>
+        <View style={{ marginHorizontal: 15, marginBottom: 10 }}>
           <Text style={{ color: 'white' }}>{media.fileName}</Text>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 15 }}>
         <TouchableOpacity onPress={pickMedia}>
           <Text style={{ color: 'blue' }}>Pick Media</Text>
         </TouchableOpacity>
 
         <Button title="Send" onPress={sendMessage} />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
